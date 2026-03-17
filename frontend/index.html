@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finance Dashboard</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div id="app">
+    <section id="page-login" class="page active">
+      <div class="login-container">
+        <div class="login-card">
+          <h1>Login</h1>
+          <p>Acesse seu painel financeiro</p>
+
+          <div class="form-group">
+            <label for="login-username">Usuário</label>
+            <input id="login-username" type="text" placeholder="Digite seu usuário" />
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Senha</label>
+            <input id="login-password" type="password" placeholder="Digite sua senha" />
+          </div>
+
+          <button id="btn-login">Entrar</button>
+          <p id="login-error" class="error-text"></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-app" class="page">
+      <header class="topbar">
+        <div>
+          <h2>Finance Dashboard</h2>
+          <span id="user-badge"></span>
+        </div>
+        <button id="btn-logout" class="btn-secondary">Sair</button>
+      </header>
+
+      <div class="layout">
+        <aside class="sidebar">
+          <button class="nav-btn active" data-route="resumo">Resumo</button>
+          <button class="nav-btn" data-route="movimentacoes">Movimentações</button>
+          <button class="nav-btn" data-route="contas">Contas a pagar</button>
+          <button class="nav-btn" data-route="assinaturas">Assinaturas</button>
+          <button class="nav-btn" data-route="cartoes">Cartões</button>
+          <button class="nav-btn" data-route="investimentos">Investimentos</button>
+          <button class="nav-btn" data-route="config">Config</button>
+        </aside>
+
+        <main class="content">
+          <div id="view-root"></div>
+        </main>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
