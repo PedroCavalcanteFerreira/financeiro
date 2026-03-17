@@ -19,6 +19,7 @@ export function bindLogin({ onSuccess }) {
 
     try {
       const res = await api.login(username, password);
+      console.log("Resposta login:", res);
 
       if (!res.ok) {
         errorEl.textContent = res.message || "Erro ao fazer login.";
@@ -30,8 +31,8 @@ export function bindLogin({ onSuccess }) {
 
       onSuccess(res.user);
     } catch (err) {
-      errorEl.textContent = "Erro de conexão com a API.";
-      console.error(err);
+      console.error("Erro detalhado no login:", err);
+      errorEl.textContent = `Erro de conexão com a API: ${err.message || err}`;
     }
   });
 }
