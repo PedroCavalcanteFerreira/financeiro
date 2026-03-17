@@ -54,5 +54,35 @@ export const api = {
   async getMovimentacoes(token, month) {
     const url = `${API_URL}?action=movimentacoes&token=${encodeURIComponent(token)}&month=${encodeURIComponent(month)}&_ts=${Date.now()}`;
     return getJSON(url);
+  },
+
+  async getConfigMovimentacoes(token) {
+    const url = `${API_URL}?action=configMovimentacoes&token=${encodeURIComponent(token)}&_ts=${Date.now()}`;
+    return getJSON(url);
+  },
+
+  async addMovimentacao(token, payload) {
+    return postJSON({
+      action: "addMovimentacao",
+      token,
+      payload
+    });
+  },
+
+  async deleteMovimentacao(token, txId) {
+    return postJSON({
+      action: "deleteMovimentacao",
+      token,
+      txId
+    });
+  },
+
+  async updateMovimentacaoStatus(token, txId, status) {
+    return postJSON({
+      action: "updateMovimentacaoStatus",
+      token,
+      txId,
+      status
+    });
   }
 };
