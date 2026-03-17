@@ -2,7 +2,8 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwoF_hk2QQlYvMDPQuYhVbJ
 
 async function getJSON(url) {
   const res = await fetch(url, {
-    method: "GET"
+    method: "GET",
+    cache: "no-store"
   });
 
   return res.json();
@@ -14,7 +15,8 @@ async function postJSON(body) {
 
   const res = await fetch(API_URL, {
     method: "POST",
-    body: formBody
+    body: formBody,
+    cache: "no-store"
   });
 
   return res.json();
@@ -30,7 +32,7 @@ export const api = {
   },
 
   async getResumoData(token) {
-    const url = `${API_URL}?action=resumo&token=${encodeURIComponent(token)}`;
+    const url = `${API_URL}?action=resumo&token=${encodeURIComponent(token)}&_ts=${Date.now()}`;
     return getJSON(url);
   }
 };
