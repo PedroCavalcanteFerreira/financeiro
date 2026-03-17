@@ -12,12 +12,12 @@ async function getJSON(url) {
 }
 
 async function postJSON(body) {
+  const formBody = new URLSearchParams();
+  formBody.append("payload", JSON.stringify(body));
+
   const res = await fetch(API_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    },
-    body: JSON.stringify(body)
+    body: formBody
   });
 
   return res.json();
