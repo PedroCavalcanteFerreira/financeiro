@@ -3,6 +3,7 @@ import { renderResumo } from "./pages/resumo.js";
 import { renderCartoes } from "./pages/cartoes.js";
 import { renderContas } from "./pages/contas.js";
 import { renderAssinaturas } from "./pages/assinaturas.js";
+import { renderMovimentacoes } from "./pages/movimentacoes.js";
 
 const pageLogin = document.getElementById("page-login");
 const pageApp = document.getElementById("page-app");
@@ -77,6 +78,17 @@ async function navigate(route) {
         </div>
       `;
       await renderAssinaturas(viewRoot);
+      return;
+    }
+
+    if (route === "movimentacoes") {
+      viewRoot.innerHTML = `
+        <div class="card">
+          <h3>Movimentações</h3>
+          <p class="muted">Carregando...</p>
+        </div>
+      `;
+      await renderMovimentacoes(viewRoot);
       return;
     }
 

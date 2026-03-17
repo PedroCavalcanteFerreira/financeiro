@@ -49,5 +49,10 @@ export const api = {
   async getAssinaturas(token) {
     const url = `${API_URL}?action=assinaturas&token=${encodeURIComponent(token)}&_ts=${Date.now()}`;
     return getJSON(url);
+  },
+
+  async getMovimentacoes(token, month) {
+    const url = `${API_URL}?action=movimentacoes&token=${encodeURIComponent(token)}&month=${encodeURIComponent(month)}&_ts=${Date.now()}`;
+    return getJSON(url);
   }
 };
