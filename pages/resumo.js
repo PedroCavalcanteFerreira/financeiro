@@ -10,7 +10,16 @@ function brl(value) {
 
 export async function renderResumo(root) {
   const token = localStorage.getItem("finance_token");
+  if (!token) {
+    throw new Error("Token não encontrado no localStorage.");
+  }
+
   const res = await api.getResumoData(token);
+  console.log("Resposta resumo:", res);
+
+  if (!res || typeof res !== "object") {
+    throw new Error("Resposta inválida da API.");
+  }
 
   if (!res.ok) {
     root.innerHTML = `
@@ -23,45 +32,48 @@ export async function renderResumo(root) {
   }
 
   const data = res.data;
+  if (!data) {
+    throw new Error("Campo data não veio na resposta.");
+  }
 
   root.innerHTML = `
     <section>
       <div class="grid grid-kpi">
         <div class="card">
           <div class="kpi-label">Sobrou do mês anterior</div>
-          <div class="kpi-value">${brl(data.kpis.carryover)}</div>
+          <div class="kpi-value">${brl(data.kpis?.carryover)}</div>
         </div>
 
         <div class="card">
           <div class="kpi-label">Saldo atual - Conta</div>
-          <div class="kpi-value">${brl(data.kpis.saldoConta)}</div>
+          <div class="kpi-value">${brl(data.kpis?.saldoConta)}</div>
         </div>
 
         <div class="card">
           <div class="kpi-label">Saldo atual - Benefícios</div>
-          <div class="kpi-value">${brl(data.kpis.saldoBeneficios)}</div>
+          <div class="kpi-value">${brl(data.kpis?.saldoBeneficios)}</div>
         </div>
 
         <div class="card">
           <div class="kpi-label">Total disponível</div>
-          <div class="kpi-value">${brl(data.kpis.saldoTotal)}</div>
+          <div class="kpi-value">${brl(data.kpis?.saldoTotal)}</div>
         </div>
       </div>
 
       <div class="grid grid-kpi" style="margin-top:16px;">
         <div class="card">
           <div class="kpi-label">Resultado do mês - Conta</div>
-          <div class="kpi-value">${brl(data.kpis.resultadoConta)}</div>
+          <div class="kpi-value">${brl(data.kpis?.resultadoConta)}</div>
         </div>
 
         <div class="card">
           <div class="kpi-label">Resultado do mês - Benefícios</div>
-          <div class="kpi-value">${brl(data.kpis.resultadoBeneficios)}</div>
+          <div class="kpi-value">${brl(data.kpis?.resultadoBeneficios)}</div>
         </div>
 
         <div class="card">
           <div class="kpi-label">A pagar (30 dias)</div>
-          <div class="kpi-value">${brl(data.kpis.aPagar30d)}</div>
+          <div class="kpi-value">${brl(data.kpis?.aPagar30d)}</div>
         </div>
 
         <div class="card">
@@ -111,35 +123,36 @@ export async function renderResumo(root) {
     </section>
   `;
 
-  renderBarChart("chart-conta", data.receitaDespesaConta.labels, [
-    { label: "Receitas", data: data.receitaDespesaConta.receitas },
-    { label: "Despesas", data: data.receitaDespesaConta.despesas }
+  renderBarChart("chart-conta", data.receitaDespesaConta?.labels || [], [
+    { label: "Receitas", data: data.receitaDespesaConta?.receitas || [] },
+    { label: "Despesas", data: data.receitaDespesaConta?.despesas || [] }
   ]);
 
-  renderBarChart("chart-beneficios", data.receitaDespesaBeneficios.labels, [
-    { label: "Receitas", data: data.receitaDespesaBeneficios.receitas },
-    { label: "Despesas", data: data.receitaDespesaBeneficios.despesas }
+  renderBarChart("chart-beneficios", data.receitaDespesaBeneficios?.labels || [], [
+    { label: "Receitas", data: data.receitaDespesaBeneficios?.receitas || [] },
+    { label: "Despesas", data: data.receitaDespesaBeneficios?.despesas || [] }
   ]);
 
   renderDoughnutChart(
     "chart-a-pagar",
-    data.contasAPagarBreakdown.labels,
-    data.contasAPagarBreakdown.values
+    data.contasAPagarBreakdown?.labels || [],
+    data.contasAPagarBreakdown?.values || []
   );
 
   const cardsSummary = document.getElementById("cards-summary");
-  cardsSummary.innerHTML = data.cartoes.map((card) => {
-    const disponivel = Number(card.limiteTotal) - Number(card.limiteUsado);
-    const percentual = card.limiteTotal > 0
-      ? Math.min((Number(card.limiteUsado) / Number(card.limiteTotal)) * 100, 100)
+  const cartoes = Array.isArray(data.cartoes) ? data.cartoes : [];
+  cardsSummary.innerHTML = cartoes.map((card) => {
+    const disponivel = Number(card.limiteTotal || 0) - Number(card.limiteUsado || 0);
+    const percentual = Number(card.limiteTotal || 0) > 0
+      ? Math.min((Number(card.limiteUsado || 0) / Number(card.limiteTotal || 0)) * 100, 100)
       : 0;
 
     return `
       <div class="simple-item">
         <div style="flex:1;">
-          <div><strong>${card.name}</strong></div>
+          <div><strong>${card.name || "-"}</strong></div>
           <div class="muted">Fatura aberta: ${brl(card.faturaAberta)}</div>
-          <div class="muted">Vencimento: ${card.vencimento}</div>
+          <div class="muted">Vencimento: ${card.vencimento || "-"}</div>
 
           <div class="progress-wrap">
             <div class="muted">Usado: ${brl(card.limiteUsado)} | Disponível: ${brl(disponivel)}</div>
@@ -156,11 +169,12 @@ export async function renderResumo(root) {
   }).join("");
 
   const body = document.getElementById("last-movs-body");
-  body.innerHTML = data.ultimasMovimentacoes.map((item) => `
+  const movs = Array.isArray(data.ultimasMovimentacoes) ? data.ultimasMovimentacoes : [];
+  body.innerHTML = movs.map((item) => `
     <tr>
-      <td>${item.data}</td>
-      <td>${item.descricao}</td>
-      <td>${item.wallet}</td>
+      <td>${item.data || "-"}</td>
+      <td>${item.descricao || "-"}</td>
+      <td>${item.wallet || "-"}</td>
       <td>${brl(item.valor)}</td>
     </tr>
   `).join("");

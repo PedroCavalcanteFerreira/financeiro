@@ -32,17 +32,33 @@ async function navigate(route) {
     btn.classList.toggle("active", btn.dataset.route === route);
   });
 
-  if (route === "resumo") {
-    await renderResumo(viewRoot);
-    return;
-  }
+  try {
+    if (route === "resumo") {
+      viewRoot.innerHTML = `
+        <div class="card">
+          <h3>Resumo</h3>
+          <p class="muted">Carregando...</p>
+        </div>
+      `;
+      await renderResumo(viewRoot);
+      return;
+    }
 
-  viewRoot.innerHTML = `
-    <div class="card">
-      <h3>${route}</h3>
-      <p class="muted">Página ainda não implementada no front inicial.</p>
-    </div>
-  `;
+    viewRoot.innerHTML = `
+      <div class="card">
+        <h3>${route}</h3>
+        <p class="muted">Página ainda não implementada no front inicial.</p>
+      </div>
+    `;
+  } catch (err) {
+    console.error("Erro ao navegar/renderizar:", err);
+    viewRoot.innerHTML = `
+      <div class="card">
+        <h3>Erro ao carregar página</h3>
+        <p class="muted">${err?.message || err}</p>
+      </div>
+    `;
+  }
 }
 
 function setupNavigation() {
