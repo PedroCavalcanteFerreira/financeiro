@@ -1,6 +1,7 @@
-import { bindLogin } from "./pages/login.js?v=4";
-import { renderResumo } from "./pages/resumo.js?v=4";
-import { renderCartoes } from "./pages/cartoes.js?v=4";
+import { bindLogin } from "./pages/login.js?v=5";
+import { renderResumo } from "./pages/resumo.js?v=5";
+import { renderCartoes } from "./pages/cartoes.js?v=5";
+import { renderContas } from "./pages/contas.js?v=5";
 
 const pageLogin = document.getElementById("page-login");
 const pageApp = document.getElementById("page-app");
@@ -53,6 +54,17 @@ async function navigate(route) {
         </div>
       `;
       await renderCartoes(viewRoot);
+      return;
+    }
+
+    if (route === "contas") {
+      viewRoot.innerHTML = `
+        <div class="card">
+          <h3>Contas a pagar</h3>
+          <p class="muted">Carregando...</p>
+        </div>
+      `;
+      await renderContas(viewRoot);
       return;
     }
 
