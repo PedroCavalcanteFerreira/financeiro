@@ -1,5 +1,6 @@
 import { bindLogin } from "./pages/login.js";
 import { renderResumo } from "./pages/resumo.js";
+import { renderCartoes } from "./pages/cartoes.js";
 
 const pageLogin = document.getElementById("page-login");
 const pageApp = document.getElementById("page-app");
@@ -41,6 +42,17 @@ async function navigate(route) {
         </div>
       `;
       await renderResumo(viewRoot);
+      return;
+    }
+
+    if (route === "cartoes") {
+      viewRoot.innerHTML = `
+        <div class="card">
+          <h3>Cartões</h3>
+          <p class="muted">Carregando...</p>
+        </div>
+      `;
+      await renderCartoes(viewRoot);
       return;
     }
 

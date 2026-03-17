@@ -34,5 +34,10 @@ export const api = {
   async getResumoData(token) {
     const url = `${API_URL}?action=resumo&token=${encodeURIComponent(token)}&_ts=${Date.now()}`;
     return getJSON(url);
+  },
+
+  async getCartoesData(token) {
+    const url = `${API_URL}?action=cartoes&token=${encodeURIComponent(token)}&_ts=${Date.now()}`;
+    return getJSON(url);
   }
 };
