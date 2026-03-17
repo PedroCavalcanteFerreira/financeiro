@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzmf0LFOkh7tvw1TmkrBE4KJWft4gOvn3q3vrOmzL-4xGxqqy2WWtaqKCotyi6HUjBr/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwTKG0VzGpWF-zX5z1tQZKecVYeDzP-Y_LvjvgiN-h46zGT76qnnMfx8IR1yD2NHx8tsg/exec";
 
 async function getJSON(url) {
   const res = await fetch(url, {
@@ -43,6 +43,11 @@ export const api = {
 
   async getContasAPagar(token) {
     const url = `${API_URL}?action=contasAPagar&token=${encodeURIComponent(token)}&_ts=${Date.now()}`;
+    return getJSON(url);
+  },
+
+  async getAssinaturas(token) {
+    const url = `${API_URL}?action=assinaturas&token=${encodeURIComponent(token)}&_ts=${Date.now()}`;
     return getJSON(url);
   }
 };

@@ -2,6 +2,7 @@ import { bindLogin } from "./pages/login.js";
 import { renderResumo } from "./pages/resumo.js";
 import { renderCartoes } from "./pages/cartoes.js";
 import { renderContas } from "./pages/contas.js";
+import { renderAssinaturas } from "./pages/assinaturas.js";
 
 const pageLogin = document.getElementById("page-login");
 const pageApp = document.getElementById("page-app");
@@ -65,6 +66,17 @@ async function navigate(route) {
         </div>
       `;
       await renderContas(viewRoot);
+      return;
+    }
+
+    if (route === "assinaturas") {
+      viewRoot.innerHTML = `
+        <div class="card">
+          <h3>Assinaturas</h3>
+          <p class="muted">Carregando...</p>
+        </div>
+      `;
+      await renderAssinaturas(viewRoot);
       return;
     }
 
