@@ -1,6 +1,6 @@
-import { bindLogin } from "./pages/login.js";
-import { renderResumo } from "./pages/resumo.js";
-import { renderCartoes } from "./pages/cartoes.js";
+import { bindLogin } from "./pages/login.js?v=4";
+import { renderResumo } from "./pages/resumo.js?v=4";
+import { renderCartoes } from "./pages/cartoes.js?v=4";
 
 const pageLogin = document.getElementById("page-login");
 const pageApp = document.getElementById("page-app");
