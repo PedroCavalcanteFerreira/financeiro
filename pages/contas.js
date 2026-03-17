@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzmf0LFOkh7tvw1TmkrBE4KJWft4gOvn3q3vrOmzL-4xGxqqy2WWtaqKCotyi6HUjBr/exec";
+import { api } from "../api.js";
 
 async function getJSON(url) {
   const res = await fetch(url, {
