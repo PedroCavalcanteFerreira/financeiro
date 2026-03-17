@@ -2,10 +2,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwoF_hk2QQlYvMDPQuYhVbJ
 
 async function getJSON(url) {
   const res = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json"
-    }
+    method: "GET"
   });
 
   return res.json();
