@@ -61,6 +61,11 @@ export const api = {
     return getJSON(url);
   },
 
+  async getComprasCredito(token, month) {
+  const url = `${API_URL}?action=comprasCredito&token=${encodeURIComponent(token)}&month=${encodeURIComponent(month)}&_ts=${Date.now()}`;
+  return getJSON(url);
+  },
+
   async addMovimentacao(token, payload) {
     return postJSON({
       action: "addMovimentacao",

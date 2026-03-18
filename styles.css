@@ -232,3 +232,33 @@ button {
     border-bottom: 1px solid var(--border);
   }
 }
+.toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  min-width: 260px;
+  max-width: 360px;
+  background: #111827;
+  color: #fff;
+  padding: 14px 16px;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.success {
+  border-left: 4px solid #16a34a;
+}
+
+.toast.error {
+  border-left: 4px solid #dc2626;
+}

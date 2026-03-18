@@ -33,9 +33,10 @@ export async function renderMovimentacoes(root) {
 }
 
 async function renderMovimentacoesByMonth(root, token, month) {
-  const [movRes, cfgRes] = await Promise.all([
+  const [movRes, cfgRes, creditoRes] = await Promise.all([
     api.getMovimentacoes(token, month),
-    api.getConfigMovimentacoes(token)
+    api.getConfigMovimentacoes(token),
+    api.getComprasCredito(token, month)
   ]);
 
   if (!movRes.ok) {
@@ -58,9 +59,21 @@ async function renderMovimentacoesByMonth(root, token, month) {
     return;
   }
 
+  if (!creditoRes.ok) {
+    root.innerHTML = `
+      <div class="card">
+        <h3>Movimentações</h3>
+        <p class="muted">Erro ao carregar compras no crédito: ${creditoRes.message || "erro desconhecido"}</p>
+      </div>
+    `;
+    return;
+  }
+
   const data = movRes.data || {};
   const resumo = data.resumo || {};
   const items = Array.isArray(data.items) ? data.items : [];
+  const creditData = creditoRes.data || {};
+  const creditItems = Array.isArray(creditData.items) ? creditData.items : [];
 
   const categories = Array.isArray(cfgRes.data?.categories) ? cfgRes.data.categories : [];
   const methods = Array.isArray(cfgRes.data?.methods) ? cfgRes.data.methods : [];
@@ -160,7 +173,7 @@ async function renderMovimentacoesByMonth(root, token, month) {
       </div>
 
       <div class="card" style="margin-top:16px;">
-        <h3>Tabela de movimentações</h3>
+        <h3>Tabela de movimentações em conta</h3>
         <table class="table">
           <thead>
             <tr>
@@ -192,6 +205,37 @@ async function renderMovimentacoesByMonth(root, token, month) {
                   </button>
                   <button class="tx-delete-btn" data-id="${item.txId}" style="margin-left:6px;">Excluir</button>
                 </td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <h3>Compras no cartão de crédito do mês</h3>
+        <div class="muted" style="margin-bottom:12px;">Total do mês: ${brl(creditData.total)}</div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Compra</th>
+              <th>Cartão</th>
+              <th>Categoria</th>
+              <th>Fatura</th>
+              <th>Parcela</th>
+              <th>Valor</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${creditItems.map(item => `
+              <tr>
+                <td>${item.merchant || "-"}</td>
+                <td>${item.card || "-"}</td>
+                <td>${item.category || "-"}</td>
+                <td>${item.statementMonth || "-"}</td>
+                <td>${item.installment || "-"}</td>
+                <td>${brl(item.amount)}</td>
+                <td>${item.status || "-"}</td>
               </tr>
             `).join("")}
           </tbody>
@@ -244,48 +288,48 @@ async function renderMovimentacoesByMonth(root, token, month) {
   }
 
   function updateDynamicFields() {
-  const flow = flowEl.value;
-  const method = methodEl.value;
+    const flow = flowEl.value;
+    const method = methodEl.value;
 
-  refreshCategories();
-  refreshAccounts(flow);
-  refreshCards();
+    refreshCategories();
+    refreshAccounts(flow);
+    refreshCards();
 
-  if (flow === "RECEITA") {
-    methodWrap.style.display = "none";
+    if (flow === "RECEITA") {
+      methodWrap.style.display = "none";
+      cardWrap.style.display = "none";
+      installmentsWrap.style.display = "none";
+      accountWrap.style.display = "block";
+      return;
+    }
+
+    methodWrap.style.display = "block";
+
+    if (method === "pm_cc") {
+      cardWrap.style.display = "block";
+      installmentsWrap.style.display = "block";
+      accountWrap.style.display = "none";
+      return;
+    }
+
+    if (method === "pm_cd") {
+      cardWrap.style.display = "block";
+      installmentsWrap.style.display = "none";
+      accountWrap.style.display = "none";
+      return;
+    }
+
+    if (method === "pm_cash") {
+      cardWrap.style.display = "none";
+      installmentsWrap.style.display = "none";
+      accountWrap.style.display = "none";
+      return;
+    }
+
     cardWrap.style.display = "none";
     installmentsWrap.style.display = "none";
     accountWrap.style.display = "block";
-    return;
   }
-
-  methodWrap.style.display = "block";
-
-  if (method === "pm_cc") {
-    cardWrap.style.display = "block";
-    installmentsWrap.style.display = "block";
-    accountWrap.style.display = "none";
-    return;
-  }
-
-  if (method === "pm_cd") {
-    cardWrap.style.display = "block";
-    installmentsWrap.style.display = "none";
-    accountWrap.style.display = "none";
-    return;
-  }
-
-  if (method === "pm_cash") {
-    cardWrap.style.display = "none";
-    installmentsWrap.style.display = "none";
-    accountWrap.style.display = "none";
-    return;
-  }
-
-  cardWrap.style.display = "none";
-  installmentsWrap.style.display = "none";
-  accountWrap.style.display = "block";
-}
 
   refreshMethods();
   updateDynamicFields();
@@ -299,45 +343,80 @@ async function renderMovimentacoesByMonth(root, token, month) {
   });
 
   document.getElementById("tx-save-btn").addEventListener("click", async () => {
-  const flow = flowEl.value;
-  const method = methodEl.value;
+    const flow = flowEl.value;
+    const method = methodEl.value;
 
-  const payload = {
-    date: document.getElementById("tx-date").value,
-    flow: flow,
-    amount: Number(document.getElementById("tx-amount").value || 0),
-    category_id: document.getElementById("tx-category").value,
-    payment_method_id: flow === "RECEITA" ? "" : method,
-    account_id: accountWrap.style.display === "none" ? "" : document.getElementById("tx-account").value,
-    card_id: cardWrap.style.display === "none" ? "" : document.getElementById("tx-card").value,
-    installments_total: installmentsWrap.style.display === "none"
-      ? 1
-      : Number(document.getElementById("tx-installments").value || 1),
-    description: document.getElementById("tx-description").value,
-    status: "PAID"
-  };
+    const payload = {
+      date: document.getElementById("tx-date").value,
+      flow: flow,
+      amount: Number(document.getElementById("tx-amount").value || 0),
+      category_id: document.getElementById("tx-category").value,
+      payment_method_id: flow === "RECEITA" ? "" : method,
+      account_id: accountWrap.style.display === "none" ? "" : document.getElementById("tx-account").value,
+      card_id: cardWrap.style.display === "none" ? "" : document.getElementById("tx-card").value,
+      installments_total: installmentsWrap.style.display === "none"
+        ? 1
+        : Number(document.getElementById("tx-installments").value || 1),
+      description: document.getElementById("tx-description").value,
+      status: "PAID"
+    };
 
-  if (flow === "RECEITA") {
-    const selectedAccount = accounts.find(a => a.account_id === payload.account_id);
-    payload.wallet = selectedAccount?.kind || "CONTA";
-  } else {
-    payload.wallet = "CONTA";
-  }
+    if (flow === "RECEITA") {
+      const selectedAccount = accounts.find(a => a.account_id === payload.account_id);
+      payload.wallet = selectedAccount?.kind || "CONTA";
+    } else {
+      payload.wallet = "CONTA";
+    }
 
-  const res = await api.addMovimentacao(token, payload);
-  if (!res.ok) {
-    alert(res.message || "Erro ao salvar movimentação.");
-    return;
-  }
+    const res = await api.addMovimentacao(token, payload);
+    if (!res.ok) {
+      window.showToast(res.message || "Erro ao salvar movimentação.", "error");
+      return;
+    }
 
-  if (res.mode === "credit_card") {
-    alert("Compra no cartão de crédito registrada na fatura com sucesso.");
-  }
+    if (res.mode === "credit_card") {
+      window.showToast("Compra no cartão de crédito registrada na fatura com sucesso.", "success");
+    } else {
+      window.showToast("Movimentação salva com sucesso.", "success");
+    }
 
-  await renderMovimentacoesByMonth(
-    root,
-    token,
-    document.getElementById("mov-month").value || getCurrentMonth()
-  );
-});
+    await renderMovimentacoesByMonth(
+      root,
+      token,
+      document.getElementById("mov-month").value || getCurrentMonth()
+    );
+  });
+
+  root.querySelectorAll(".tx-delete-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const txId = btn.dataset.id;
+      const ok = confirm("Deseja excluir esta movimentação?");
+      if (!ok) return;
+
+      const res = await api.deleteMovimentacao(token, txId);
+      if (!res.ok) {
+        window.showToast(res.message || "Erro ao excluir.", "error");
+        return;
+      }
+
+      window.showToast("Movimentação excluída com sucesso.", "success");
+      await renderMovimentacoesByMonth(root, token, document.getElementById("mov-month").value || getCurrentMonth());
+    });
+  });
+
+  root.querySelectorAll(".tx-status-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const txId = btn.dataset.id;
+      const nextStatus = btn.dataset.next;
+
+      const res = await api.updateMovimentacaoStatus(token, txId, nextStatus);
+      if (!res.ok) {
+        window.showToast(res.message || "Erro ao atualizar status.", "error");
+        return;
+      }
+
+      window.showToast("Status atualizado com sucesso.", "success");
+      await renderMovimentacoesByMonth(root, token, document.getElementById("mov-month").value || getCurrentMonth());
+    });
+  });
 }

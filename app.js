@@ -129,6 +129,25 @@ function initAuthenticatedApp(user) {
   navigate("resumo");
 }
 
+window.showToast = function(message, type = "success") {
+  let toast = document.getElementById("app-toast");
+
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "app-toast";
+    toast.className = "toast";
+    document.body.appendChild(toast);
+  }
+
+  toast.textContent = message;
+  toast.className = `toast ${type} show`;
+
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3000);
+};
+
 bindLogin({
   onSuccess: initAuthenticatedApp
 });
