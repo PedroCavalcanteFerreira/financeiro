@@ -84,5 +84,34 @@ export const api = {
       txId,
       status
     });
+  },
+
+  async getConfigAssinaturas(token) {
+  const url = `${API_URL}?action=configAssinaturas&token=${encodeURIComponent(token)}&_ts=${Date.now()}`;
+  return getJSON(url);
+  },
+
+  async addAssinatura(token, payload) {
+    return postJSON({
+      action: "addAssinatura",
+      token,
+      payload
+    });
+  },
+
+  async toggleAssinaturaStatus(token, subscriptionId) {
+    return postJSON({
+      action: "toggleAssinaturaStatus",
+      token,
+      subscriptionId
+    });
+  },
+
+  async deleteAssinatura(token, subscriptionId) {
+    return postJSON({
+      action: "deleteAssinatura",
+      token,
+      subscriptionId
+    });
   }
 };
