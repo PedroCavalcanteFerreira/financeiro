@@ -244,41 +244,48 @@ async function renderMovimentacoesByMonth(root, token, month) {
   }
 
   function updateDynamicFields() {
-    const flow = flowEl.value;
-    const method = methodEl.value;
+  const flow = flowEl.value;
+  const method = methodEl.value;
 
-    refreshCategories();
-    refreshAccounts(flow);
-    refreshCards();
+  refreshCategories();
+  refreshAccounts(flow);
+  refreshCards();
 
-    if (flow === "RECEITA") {
-      methodWrap.style.display = "none";
-      cardWrap.style.display = "none";
-      installmentsWrap.style.display = "none";
-      accountWrap.style.display = "block";
-      return;
-    }
-
-    methodWrap.style.display = "block";
-
-    if (method === "pm_cc") {
-      cardWrap.style.display = "block";
-      installmentsWrap.style.display = "block";
-      accountWrap.style.display = "none";
-      return;
-    }
-
-    if (method === "pm_cd") {
-      cardWrap.style.display = "block";
-      installmentsWrap.style.display = "none";
-      accountWrap.style.display = "block";
-      return;
-    }
-
+  if (flow === "RECEITA") {
+    methodWrap.style.display = "none";
     cardWrap.style.display = "none";
     installmentsWrap.style.display = "none";
     accountWrap.style.display = "block";
+    return;
   }
+
+  methodWrap.style.display = "block";
+
+  if (method === "pm_cc") {
+    cardWrap.style.display = "block";
+    installmentsWrap.style.display = "block";
+    accountWrap.style.display = "none";
+    return;
+  }
+
+  if (method === "pm_cd") {
+    cardWrap.style.display = "block";
+    installmentsWrap.style.display = "none";
+    accountWrap.style.display = "none";
+    return;
+  }
+
+  if (method === "pm_cash") {
+    cardWrap.style.display = "none";
+    installmentsWrap.style.display = "none";
+    accountWrap.style.display = "none";
+    return;
+  }
+
+  cardWrap.style.display = "none";
+  installmentsWrap.style.display = "none";
+  accountWrap.style.display = "block";
+}
 
   refreshMethods();
   updateDynamicFields();
@@ -292,68 +299,45 @@ async function renderMovimentacoesByMonth(root, token, month) {
   });
 
   document.getElementById("tx-save-btn").addEventListener("click", async () => {
-    const flow = flowEl.value;
-    const method = methodEl.value;
+  const flow = flowEl.value;
+  const method = methodEl.value;
 
-    const payload = {
-      date: document.getElementById("tx-date").value,
-      flow: flow,
-      amount: Number(document.getElementById("tx-amount").value || 0),
-      category_id: document.getElementById("tx-category").value,
-      payment_method_id: flow === "RECEITA" ? "" : method,
-      account_id: accountWrap.style.display === "none" ? "" : document.getElementById("tx-account").value,
-      card_id: cardWrap.style.display === "none" ? "" : document.getElementById("tx-card").value,
-      installments_total: installmentsWrap.style.display === "none"
-        ? 1
-        : Number(document.getElementById("tx-installments").value || 1),
-      description: document.getElementById("tx-description").value,
-      status: "PAID"
-    };
+  const payload = {
+    date: document.getElementById("tx-date").value,
+    flow: flow,
+    amount: Number(document.getElementById("tx-amount").value || 0),
+    category_id: document.getElementById("tx-category").value,
+    payment_method_id: flow === "RECEITA" ? "" : method,
+    account_id: accountWrap.style.display === "none" ? "" : document.getElementById("tx-account").value,
+    card_id: cardWrap.style.display === "none" ? "" : document.getElementById("tx-card").value,
+    installments_total: installmentsWrap.style.display === "none"
+      ? 1
+      : Number(document.getElementById("tx-installments").value || 1),
+    description: document.getElementById("tx-description").value,
+    status: "PAID"
+  };
 
-    if (flow === "RECEITA") {
-      const selectedAccount = accounts.find(a => a.account_id === payload.account_id);
-      payload.wallet = selectedAccount?.kind || "CONTA";
-    } else {
-      payload.wallet = "CONTA";
-    }
+  if (flow === "RECEITA") {
+    const selectedAccount = accounts.find(a => a.account_id === payload.account_id);
+    payload.wallet = selectedAccount?.kind || "CONTA";
+  } else {
+    payload.wallet = "CONTA";
+  }
 
-    const res = await api.addMovimentacao(token, payload);
-    if (!res.ok) {
-      alert(res.message || "Erro ao salvar movimentação.");
-      return;
-    }
+  const res = await api.addMovimentacao(token, payload);
+  if (!res.ok) {
+    alert(res.message || "Erro ao salvar movimentação.");
+    return;
+  }
 
-    await renderMovimentacoesByMonth(root, token, document.getElementById("mov-month").value || getCurrentMonth());
-  });
+  if (res.mode === "credit_card") {
+    alert("Compra no cartão de crédito registrada na fatura com sucesso.");
+  }
 
-  root.querySelectorAll(".tx-delete-btn").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const txId = btn.dataset.id;
-      const ok = confirm("Deseja excluir esta movimentação?");
-      if (!ok) return;
-
-      const res = await api.deleteMovimentacao(token, txId);
-      if (!res.ok) {
-        alert(res.message || "Erro ao excluir.");
-        return;
-      }
-
-      await renderMovimentacoesByMonth(root, token, document.getElementById("mov-month").value || getCurrentMonth());
-    });
-  });
-
-  root.querySelectorAll(".tx-status-btn").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const txId = btn.dataset.id;
-      const nextStatus = btn.dataset.next;
-
-      const res = await api.updateMovimentacaoStatus(token, txId, nextStatus);
-      if (!res.ok) {
-        alert(res.message || "Erro ao atualizar status.");
-        return;
-      }
-
-      await renderMovimentacoesByMonth(root, token, document.getElementById("mov-month").value || getCurrentMonth());
-    });
-  });
+  await renderMovimentacoesByMonth(
+    root,
+    token,
+    document.getElementById("mov-month").value || getCurrentMonth()
+  );
+});
 }
