@@ -61,8 +61,11 @@ async function renderMovimentacoesByMonth(root, token, month) {
   const data = movRes.data || {};
   const resumo = data.resumo || {};
   const items = Array.isArray(data.items) ? data.items : [];
+
   const categories = Array.isArray(cfgRes.data?.categories) ? cfgRes.data.categories : [];
   const methods = Array.isArray(cfgRes.data?.methods) ? cfgRes.data.methods : [];
+  const accounts = Array.isArray(cfgRes.data?.accounts) ? cfgRes.data.accounts : [];
+  const cards = Array.isArray(cfgRes.data?.cards) ? cfgRes.data.cards : [];
 
   root.innerHTML = `
     <section>
@@ -96,18 +99,13 @@ async function renderMovimentacoesByMonth(root, token, month) {
 
       <div class="card" style="margin-top:16px;">
         <h3>Nova movimentação</h3>
+
         <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap:12px;">
           <div>
             <label class="muted">Data</label>
             <input id="tx-date" type="date" value="${todayDate()}" style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;" />
           </div>
-          <div>
-            <label class="muted">Wallet</label>
-            <select id="tx-wallet" style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;">
-              <option value="CONTA">Conta</option>
-              <option value="BENEFICIO">Benefício</option>
-            </select>
-          </div>
+
           <div>
             <label class="muted">Fluxo</label>
             <select id="tx-flow" style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;">
@@ -115,26 +113,42 @@ async function renderMovimentacoesByMonth(root, token, month) {
               <option value="RECEITA">Receita</option>
             </select>
           </div>
+
           <div>
             <label class="muted">Valor</label>
             <input id="tx-amount" type="number" step="0.01" style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;" />
           </div>
+
+          <div>
+            <label class="muted">Categoria</label>
+            <select id="tx-category" style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;"></select>
+          </div>
         </div>
 
         <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap:12px; margin-top:12px;">
-          <div>
-            <label class="muted">Categoria</label>
-            <select id="tx-category" style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;">
-              ${categories.map(c => `<option value="${c.category_id}">${c.name}</option>`).join("")}
-            </select>
+          <div id="tx-method-wrap">
+            <label class="muted">Forma de pagamento</label>
+            <select id="tx-method" style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;"></select>
           </div>
-          <div>
-            <label class="muted">Método</label>
-            <select id="tx-method" style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;">
-              ${methods.map(m => `<option value="${m.payment_method_id}">${m.name}</option>`).join("")}
-            </select>
+
+          <div id="tx-account-wrap">
+            <label class="muted">Conta</label>
+            <select id="tx-account" style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;"></select>
           </div>
-          <div style="grid-column: span 2;">
+
+          <div id="tx-card-wrap" style="display:none;">
+            <label class="muted">Cartão</label>
+            <select id="tx-card" style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;"></select>
+          </div>
+
+          <div id="tx-installments-wrap" style="display:none;">
+            <label class="muted">Parcelas</label>
+            <input id="tx-installments" type="number" min="1" value="1" style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;" />
+          </div>
+        </div>
+
+        <div class="grid" style="grid-template-columns: 1fr; gap:12px; margin-top:12px;">
+          <div>
             <label class="muted">Descrição</label>
             <input id="tx-description" type="text" style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;" />
           </div>
@@ -186,22 +200,122 @@ async function renderMovimentacoesByMonth(root, token, month) {
     </section>
   `;
 
+  const flowEl = document.getElementById("tx-flow");
+  const categoryEl = document.getElementById("tx-category");
+  const methodEl = document.getElementById("tx-method");
+  const accountEl = document.getElementById("tx-account");
+  const cardEl = document.getElementById("tx-card");
+
+  const methodWrap = document.getElementById("tx-method-wrap");
+  const accountWrap = document.getElementById("tx-account-wrap");
+  const cardWrap = document.getElementById("tx-card-wrap");
+  const installmentsWrap = document.getElementById("tx-installments-wrap");
+
+  function fillSelect(selectEl, items, valueKey, labelKey) {
+    selectEl.innerHTML = items.map(item => `
+      <option value="${item[valueKey]}">${item[labelKey]}</option>
+    `).join("");
+  }
+
+  function refreshCategories() {
+    const flow = flowEl.value;
+    const filtered = categories.filter(c => String(c.flow).toUpperCase() === flow);
+    fillSelect(categoryEl, filtered, "category_id", "name");
+  }
+
+  function refreshMethods() {
+    fillSelect(methodEl, methods, "payment_method_id", "name");
+  }
+
+  function refreshAccounts(flow) {
+    let filtered = accounts;
+
+    if (flow === "RECEITA") {
+      filtered = accounts.filter(a => a.kind === "CONTA" || a.kind === "BENEFICIO");
+    } else {
+      filtered = accounts.filter(a => a.kind === "CONTA");
+    }
+
+    fillSelect(accountEl, filtered, "account_id", "name");
+  }
+
+  function refreshCards() {
+    fillSelect(cardEl, cards, "card_id", "name");
+  }
+
+  function updateDynamicFields() {
+    const flow = flowEl.value;
+    const method = methodEl.value;
+
+    refreshCategories();
+    refreshAccounts(flow);
+    refreshCards();
+
+    if (flow === "RECEITA") {
+      methodWrap.style.display = "none";
+      cardWrap.style.display = "none";
+      installmentsWrap.style.display = "none";
+      accountWrap.style.display = "block";
+      return;
+    }
+
+    methodWrap.style.display = "block";
+
+    if (method === "pm_cc") {
+      cardWrap.style.display = "block";
+      installmentsWrap.style.display = "block";
+      accountWrap.style.display = "none";
+      return;
+    }
+
+    if (method === "pm_cd") {
+      cardWrap.style.display = "block";
+      installmentsWrap.style.display = "none";
+      accountWrap.style.display = "block";
+      return;
+    }
+
+    cardWrap.style.display = "none";
+    installmentsWrap.style.display = "none";
+    accountWrap.style.display = "block";
+  }
+
+  refreshMethods();
+  updateDynamicFields();
+
+  flowEl.addEventListener("change", updateDynamicFields);
+  methodEl.addEventListener("change", updateDynamicFields);
+
   document.getElementById("mov-filter-btn").addEventListener("click", async () => {
     const newMonth = document.getElementById("mov-month").value || getCurrentMonth();
     await renderMovimentacoesByMonth(root, token, newMonth);
   });
 
   document.getElementById("tx-save-btn").addEventListener("click", async () => {
+    const flow = flowEl.value;
+    const method = methodEl.value;
+
     const payload = {
       date: document.getElementById("tx-date").value,
-      wallet: document.getElementById("tx-wallet").value,
-      flow: document.getElementById("tx-flow").value,
+      flow: flow,
       amount: Number(document.getElementById("tx-amount").value || 0),
       category_id: document.getElementById("tx-category").value,
-      payment_method_id: document.getElementById("tx-method").value,
+      payment_method_id: flow === "RECEITA" ? "" : method,
+      account_id: accountWrap.style.display === "none" ? "" : document.getElementById("tx-account").value,
+      card_id: cardWrap.style.display === "none" ? "" : document.getElementById("tx-card").value,
+      installments_total: installmentsWrap.style.display === "none"
+        ? 1
+        : Number(document.getElementById("tx-installments").value || 1),
       description: document.getElementById("tx-description").value,
       status: "PAID"
     };
+
+    if (flow === "RECEITA") {
+      const selectedAccount = accounts.find(a => a.account_id === payload.account_id);
+      payload.wallet = selectedAccount?.kind || "CONTA";
+    } else {
+      payload.wallet = "CONTA";
+    }
 
     const res = await api.addMovimentacao(token, payload);
     if (!res.ok) {
