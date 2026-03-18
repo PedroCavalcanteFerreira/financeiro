@@ -375,9 +375,24 @@ async function renderMovimentacoesByMonth(root, token, month) {
     }
 
     if (res.mode === "credit_card") {
-      window.showToast("Compra no cartão de crédito registrada na fatura com sucesso.", "success");
+    window.showToast("Compra no cartão de crédito registrada na fatura com sucesso.", "success");
+    } else if (res.mode === "card_bill_payment") {
+    const settled = Number(res.settled_amount || 0).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+    });
+
+    if (Number(res.remaining_unapplied || 0) > 0) {
+        const rest = Number(res.remaining_unapplied || 0).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+        });
+        window.showToast(`Pagamento registrado. ${settled} abatido da fatura. Sobra não aplicada: ${rest}.`, "success");
     } else {
-      window.showToast("Movimentação salva com sucesso.", "success");
+        window.showToast(`Pagamento registrado. ${settled} abatido da fatura e limite liberado.`, "success");
+    }
+    } else {
+    window.showToast("Movimentação salva com sucesso.", "success");
     }
 
     await renderMovimentacoesByMonth(
