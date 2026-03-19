@@ -378,18 +378,22 @@ async function renderMovimentacoesByMonth(root, token, month) {
     window.showToast("Compra no cartão de crédito registrada na fatura com sucesso.", "success");
     } else if (res.mode === "card_bill_payment") {
     const settled = Number(res.settled_amount || 0).toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL"
+      style: "currency",
+      currency: "BRL"
     });
 
+    const partialSuffix = Number(res.partial_lines_count || 0) > 0
+      ? " com abatimento parcial"
+      : "";
+
     if (Number(res.remaining_unapplied || 0) > 0) {
-        const rest = Number(res.remaining_unapplied || 0).toLocaleString("pt-BR", {
+      const rest = Number(res.remaining_unapplied || 0).toLocaleString("pt-BR", {
         style: "currency",
         currency: "BRL"
-        });
-        window.showToast(`Pagamento registrado. ${settled} abatido da fatura. Sobra não aplicada: ${rest}.`, "success");
+      });
+      window.showToast(`Pagamento registrado. ${settled} abatido da fatura${partialSuffix}. Sobra não aplicada: ${rest}.`, "success");
     } else {
-        window.showToast(`Pagamento registrado. ${settled} abatido da fatura e limite liberado.`, "success");
+      window.showToast(`Pagamento registrado. ${settled} abatido da fatura${partialSuffix} e limite liberado.`, "success");
     }
     } else {
     window.showToast("Movimentação salva com sucesso.", "success");
