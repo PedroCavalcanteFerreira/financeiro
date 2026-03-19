@@ -287,9 +287,11 @@ async function renderMovimentacoesByMonth(root, token, month) {
     fillSelect(cardEl, cards, "card_id", "name");
   }
 
-  function updateDynamicFields() {
+    function updateDynamicFields() {
     const flow = flowEl.value;
     const method = methodEl.value;
+    const category = categoryEl.value;
+    const isCardBillPayment = flow === "DESPESA" && category === "cat_card_bill";
 
     refreshCategories();
     refreshAccounts(flow);
@@ -304,6 +306,20 @@ async function renderMovimentacoesByMonth(root, token, month) {
     }
 
     methodWrap.style.display = "block";
+
+    // Pagamento de fatura: sempre precisa escolher o cartão da fatura
+    if (isCardBillPayment) {
+      cardWrap.style.display = "block";
+      installmentsWrap.style.display = "none";
+
+      if (method === "pm_cd" || method === "pm_cash") {
+        accountWrap.style.display = "none";
+      } else {
+        accountWrap.style.display = "block";
+      }
+
+      return;
+    }
 
     if (method === "pm_cc") {
       cardWrap.style.display = "block";
@@ -336,6 +352,7 @@ async function renderMovimentacoesByMonth(root, token, month) {
 
   flowEl.addEventListener("change", updateDynamicFields);
   methodEl.addEventListener("change", updateDynamicFields);
+  categoryEl.addEventListener("change", updateDynamicFields);
 
   document.getElementById("mov-filter-btn").addEventListener("click", async () => {
     const newMonth = document.getElementById("mov-month").value || getCurrentMonth();
