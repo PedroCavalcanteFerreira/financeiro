@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbwTKG0VzGpWF-zX5z1tQZKecVYeDzP-Y_LvjvgiN-h46zGT76qnnMfx8IR1yD2NHx8tsg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwnNx5wzFzSPZAw5qZTPpUnVft88pdcFceo6Ggh_ARg5OUdr79O8juTbOTQgc0c8tGn/exec";
 
 async function getJSON(url) {
   const res = await fetch(url, {
@@ -58,11 +58,6 @@ export const api = {
 
   async getMovimentacoes(token, month) {
     const url = `${API_URL}?action=movimentacoes&token=${encodeURIComponent(token)}&month=${encodeURIComponent(month)}&_ts=${Date.now()}`;
-    return getJSON(url);
-  },
-
-  async getMovimentacoesBundle(token, month) {
-    const url = `${API_URL}?action=movimentacoesBundle&token=${encodeURIComponent(token)}&month=${encodeURIComponent(month)}&_ts=${Date.now()}`;
     return getJSON(url);
   },
 
