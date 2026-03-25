@@ -138,7 +138,7 @@ async function renderMovimentacoesByMonth(root, token, month) {
           </div>
         </div>
 
-        <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap:12px; margin-top:12px;">
+        <div class="grid" style="grid-template-columns: repeat(5, 1fr); gap:12px; margin-top:12px;">
           <div id="tx-method-wrap">
             <label class="muted">Forma de pagamento</label>
             <select id="tx-method" style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;"></select>
@@ -157,6 +157,14 @@ async function renderMovimentacoesByMonth(root, token, month) {
           <div id="tx-installments-wrap" style="display:none;">
             <label class="muted">Parcelas</label>
             <input id="tx-installments" type="number" min="1" value="1" style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;" />
+          </div>
+
+          <div id="tx-card-bill-partial-wrap" style="display:none;">
+            <label class="muted">Pagamento parcial?</label>
+            <div style="margin-top:12px; display:flex; align-items:center; gap:8px;">
+              <input id="tx-card-bill-partial" type="checkbox" />
+              <span class="muted">Sim</span>
+            </div>
           </div>
         </div>
 
@@ -254,38 +262,38 @@ async function renderMovimentacoesByMonth(root, token, month) {
   const accountWrap = document.getElementById("tx-account-wrap");
   const cardWrap = document.getElementById("tx-card-wrap");
   const installmentsWrap = document.getElementById("tx-installments-wrap");
+  const partialWrap = document.getElementById("tx-card-bill-partial-wrap");
+  const partialEl = document.getElementById("tx-card-bill-partial");
 
-  function fillSelect(selectEl, items, valueKey, labelKey, preferredValue = "") {
-    const options = Array.isArray(items) ? items : [];
-    const hasPreferred = options.some(item => String(item[valueKey]) === String(preferredValue));
+  function fillSelect(selectEl, items, valueKey, labelKey) {
+    const previousValue = selectEl.value;
 
-    selectEl.innerHTML = options.map(item => `
+    selectEl.innerHTML = items.map(item => `
       <option value="${item[valueKey]}">${item[labelKey]}</option>
     `).join("");
 
-    if (!options.length) {
-      selectEl.innerHTML = '<option value="">Nenhuma opção disponível</option>';
-      selectEl.value = "";
-      return;
-    }
+    const hasPrevious = items.some(item => String(item[valueKey]) === String(previousValue));
 
-    selectEl.value = hasPreferred ? String(preferredValue) : String(options[0][valueKey]);
+    if (hasPrevious) {
+      selectEl.value = previousValue;
+    } else if (items.length) {
+      selectEl.value = String(items[0][valueKey]);
+    } else {
+      selectEl.value = "";
+    }
   }
 
   function refreshCategories() {
     const flow = flowEl.value;
-    const currentValue = categoryEl.value;
     const filtered = categories.filter(c => String(c.flow).toUpperCase() === flow);
-    fillSelect(categoryEl, filtered, "category_id", "name", currentValue);
+    fillSelect(categoryEl, filtered, "category_id", "name");
   }
 
   function refreshMethods() {
-    const currentValue = methodEl.value;
-    fillSelect(methodEl, methods, "payment_method_id", "name", currentValue || "pm_cash");
+    fillSelect(methodEl, methods, "payment_method_id", "name");
   }
 
   function refreshAccounts(flow) {
-    const currentValue = accountEl.value;
     let filtered = accounts;
 
     if (flow === "RECEITA") {
@@ -294,31 +302,46 @@ async function renderMovimentacoesByMonth(root, token, month) {
       filtered = accounts.filter(a => a.kind === "CONTA");
     }
 
-    fillSelect(accountEl, filtered, "account_id", "name", currentValue);
+    fillSelect(accountEl, filtered, "account_id", "name");
   }
 
   function refreshCards() {
-    const currentValue = cardEl.value;
-    fillSelect(cardEl, cards, "card_id", "name", currentValue);
+    fillSelect(cardEl, cards, "card_id", "name");
   }
 
   function updateDynamicFields() {
     const flow = flowEl.value;
-    const method = methodEl.value;
 
     refreshCategories();
     refreshAccounts(flow);
     refreshCards();
+
+    const categoryId = categoryEl.value;
+    const method = methodEl.value;
+    const isCardBill = flow === "DESPESA" && categoryId === "cat_card_bill";
+
+    partialWrap.style.display = "none";
 
     if (flow === "RECEITA") {
       methodWrap.style.display = "none";
       cardWrap.style.display = "none";
       installmentsWrap.style.display = "none";
       accountWrap.style.display = "block";
+      partialEl.checked = false;
+      return;
+    }
+
+    if (isCardBill) {
+      methodWrap.style.display = "none";
+      cardWrap.style.display = "block";
+      installmentsWrap.style.display = "none";
+      accountWrap.style.display = "block";
+      partialWrap.style.display = "block";
       return;
     }
 
     methodWrap.style.display = "block";
+    partialEl.checked = false;
 
     if (method === "pm_cc") {
       cardWrap.style.display = "block";
@@ -351,6 +374,7 @@ async function renderMovimentacoesByMonth(root, token, month) {
 
   flowEl.addEventListener("change", updateDynamicFields);
   methodEl.addEventListener("change", updateDynamicFields);
+  categoryEl.addEventListener("change", updateDynamicFields);
 
   document.getElementById("mov-filter-btn").addEventListener("click", async () => {
     const newMonth = document.getElementById("mov-month").value || getCurrentMonth();
@@ -361,19 +385,23 @@ async function renderMovimentacoesByMonth(root, token, month) {
     const flow = flowEl.value;
     const method = methodEl.value;
 
+    const categoryId = document.getElementById("tx-category").value;
+    const isCardBill = flow === "DESPESA" && categoryId === "cat_card_bill";
+
     const payload = {
       date: document.getElementById("tx-date").value,
       flow: flow,
       amount: Number(document.getElementById("tx-amount").value || 0),
-      category_id: document.getElementById("tx-category").value,
-      payment_method_id: flow === "RECEITA" ? "" : method,
+      category_id: categoryId,
+      payment_method_id: flow === "RECEITA" ? "" : (isCardBill ? "" : method),
       account_id: accountWrap.style.display === "none" ? "" : document.getElementById("tx-account").value,
       card_id: cardWrap.style.display === "none" ? "" : document.getElementById("tx-card").value,
       installments_total: installmentsWrap.style.display === "none"
         ? 1
         : Number(document.getElementById("tx-installments").value || 1),
       description: document.getElementById("tx-description").value,
-      status: "PAID"
+      status: "PAID",
+      is_partial: isCardBill ? Boolean(partialEl.checked) : false
     };
 
     if (flow === "RECEITA") {
@@ -390,24 +418,24 @@ async function renderMovimentacoesByMonth(root, token, month) {
     }
 
     if (res.mode === "credit_card") {
-    window.showToast("Compra no cartão de crédito registrada na fatura com sucesso.", "success");
+      window.showToast("Compra no cartão de crédito registrada na fatura com sucesso.", "success");
     } else if (res.mode === "card_bill_payment") {
-    const settled = Number(res.settled_amount || 0).toLocaleString("pt-BR", {
+      const settled = Number(res.settled_amount || 0).toLocaleString("pt-BR", {
         style: "currency",
         currency: "BRL"
-    });
+      });
 
-    if (Number(res.remaining_unapplied || 0) > 0) {
+      if (Number(res.remaining_unapplied || 0) > 0) {
         const rest = Number(res.remaining_unapplied || 0).toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL"
+          style: "currency",
+          currency: "BRL"
         });
         window.showToast(`Pagamento registrado. ${settled} abatido da fatura. Sobra não aplicada: ${rest}.`, "success");
-    } else {
+      } else {
         window.showToast(`Pagamento registrado. ${settled} abatido da fatura e limite liberado.`, "success");
-    }
+      }
     } else {
-    window.showToast("Movimentação salva com sucesso.", "success");
+      window.showToast("Movimentação salva com sucesso.", "success");
     }
 
     await renderMovimentacoesByMonth(
