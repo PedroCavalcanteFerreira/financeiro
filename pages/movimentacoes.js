@@ -255,23 +255,37 @@ async function renderMovimentacoesByMonth(root, token, month) {
   const cardWrap = document.getElementById("tx-card-wrap");
   const installmentsWrap = document.getElementById("tx-installments-wrap");
 
-  function fillSelect(selectEl, items, valueKey, labelKey) {
-    selectEl.innerHTML = items.map(item => `
+  function fillSelect(selectEl, items, valueKey, labelKey, preferredValue = "") {
+    const options = Array.isArray(items) ? items : [];
+    const hasPreferred = options.some(item => String(item[valueKey]) === String(preferredValue));
+
+    selectEl.innerHTML = options.map(item => `
       <option value="${item[valueKey]}">${item[labelKey]}</option>
     `).join("");
+
+    if (!options.length) {
+      selectEl.innerHTML = '<option value="">Nenhuma opção disponível</option>';
+      selectEl.value = "";
+      return;
+    }
+
+    selectEl.value = hasPreferred ? String(preferredValue) : String(options[0][valueKey]);
   }
 
   function refreshCategories() {
     const flow = flowEl.value;
+    const currentValue = categoryEl.value;
     const filtered = categories.filter(c => String(c.flow).toUpperCase() === flow);
-    fillSelect(categoryEl, filtered, "category_id", "name");
+    fillSelect(categoryEl, filtered, "category_id", "name", currentValue);
   }
 
   function refreshMethods() {
-    fillSelect(methodEl, methods, "payment_method_id", "name");
+    const currentValue = methodEl.value;
+    fillSelect(methodEl, methods, "payment_method_id", "name", currentValue || "pm_cash");
   }
 
   function refreshAccounts(flow) {
+    const currentValue = accountEl.value;
     let filtered = accounts;
 
     if (flow === "RECEITA") {
@@ -280,18 +294,17 @@ async function renderMovimentacoesByMonth(root, token, month) {
       filtered = accounts.filter(a => a.kind === "CONTA");
     }
 
-    fillSelect(accountEl, filtered, "account_id", "name");
+    fillSelect(accountEl, filtered, "account_id", "name", currentValue);
   }
 
   function refreshCards() {
-    fillSelect(cardEl, cards, "card_id", "name");
+    const currentValue = cardEl.value;
+    fillSelect(cardEl, cards, "card_id", "name", currentValue);
   }
 
-    function updateDynamicFields() {
+  function updateDynamicFields() {
     const flow = flowEl.value;
     const method = methodEl.value;
-    const category = categoryEl.value;
-    const isCardBillPayment = flow === "DESPESA" && category === "cat_card_bill";
 
     refreshCategories();
     refreshAccounts(flow);
@@ -306,20 +319,6 @@ async function renderMovimentacoesByMonth(root, token, month) {
     }
 
     methodWrap.style.display = "block";
-
-    // Pagamento de fatura: sempre precisa escolher o cartão da fatura
-    if (isCardBillPayment) {
-      cardWrap.style.display = "block";
-      installmentsWrap.style.display = "none";
-
-      if (method === "pm_cd" || method === "pm_cash") {
-        accountWrap.style.display = "none";
-      } else {
-        accountWrap.style.display = "block";
-      }
-
-      return;
-    }
 
     if (method === "pm_cc") {
       cardWrap.style.display = "block";
@@ -352,7 +351,6 @@ async function renderMovimentacoesByMonth(root, token, month) {
 
   flowEl.addEventListener("change", updateDynamicFields);
   methodEl.addEventListener("change", updateDynamicFields);
-  categoryEl.addEventListener("change", updateDynamicFields);
 
   document.getElementById("mov-filter-btn").addEventListener("click", async () => {
     const newMonth = document.getElementById("mov-month").value || getCurrentMonth();
@@ -395,22 +393,18 @@ async function renderMovimentacoesByMonth(root, token, month) {
     window.showToast("Compra no cartão de crédito registrada na fatura com sucesso.", "success");
     } else if (res.mode === "card_bill_payment") {
     const settled = Number(res.settled_amount || 0).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL"
-    });
-
-    const partialSuffix = Number(res.partial_lines_count || 0) > 0
-      ? " com abatimento parcial"
-      : "";
-
-    if (Number(res.remaining_unapplied || 0) > 0) {
-      const rest = Number(res.remaining_unapplied || 0).toLocaleString("pt-BR", {
         style: "currency",
         currency: "BRL"
-      });
-      window.showToast(`Pagamento registrado. ${settled} abatido da fatura${partialSuffix}. Sobra não aplicada: ${rest}.`, "success");
+    });
+
+    if (Number(res.remaining_unapplied || 0) > 0) {
+        const rest = Number(res.remaining_unapplied || 0).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+        });
+        window.showToast(`Pagamento registrado. ${settled} abatido da fatura. Sobra não aplicada: ${rest}.`, "success");
     } else {
-      window.showToast(`Pagamento registrado. ${settled} abatido da fatura${partialSuffix} e limite liberado.`, "success");
+        window.showToast(`Pagamento registrado. ${settled} abatido da fatura e limite liberado.`, "success");
     }
     } else {
     window.showToast("Movimentação salva com sucesso.", "success");
