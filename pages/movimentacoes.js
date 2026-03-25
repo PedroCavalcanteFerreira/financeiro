@@ -22,6 +22,43 @@ function todayDate() {
   return `${y}-${m}-${day}`;
 }
 
+function getMovConfigCacheKey() {
+  return "finance_mov_config_cache_v1";
+}
+
+function readMovConfigCache() {
+  try {
+    const raw = sessionStorage.getItem(getMovConfigCacheKey());
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function writeMovConfigCache(data) {
+  try {
+    sessionStorage.setItem(getMovConfigCacheKey(), JSON.stringify({
+      savedAt: Date.now(),
+      data
+    }));
+  } catch (e) {}
+}
+
+async function getMovConfigFast(token) {
+  const cached = readMovConfigCache();
+  const maxAgeMs = 5 * 60 * 1000;
+
+  if (cached && cached.savedAt && (Date.now() - cached.savedAt) <= maxAgeMs && cached.data) {
+    return { ok: true, data: cached.data };
+  }
+
+  const res = await api.getConfigMovimentacoes(token);
+  if (res.ok) {
+    writeMovConfigCache(res.data);
+  }
+  return res;
+}
+
 export async function renderMovimentacoes(root) {
   const token = localStorage.getItem("finance_token");
   if (!token) {
@@ -35,7 +72,7 @@ export async function renderMovimentacoes(root) {
 async function renderMovimentacoesByMonth(root, token, month) {
   const [movRes, cfgRes, creditoRes] = await Promise.all([
     api.getMovimentacoes(token, month),
-    api.getConfigMovimentacoes(token),
+    getMovConfigFast(token),
     api.getComprasCredito(token, month)
   ]);
 
