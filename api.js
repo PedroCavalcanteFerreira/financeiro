@@ -31,6 +31,11 @@ export const api = {
     });
   },
 
+  async getDataVersion(token) {
+    const url = `${API_URL}?action=dataVersion&token=${encodeURIComponent(token)}&_ts=${Date.now()}`;
+    return getJSON(url);
+  },
+
   async getResumoData(token) {
     const url = `${API_URL}?action=resumo&token=${encodeURIComponent(token)}&_ts=${Date.now()}`;
     return getJSON(url);
@@ -62,8 +67,8 @@ export const api = {
   },
 
   async getComprasCredito(token, month) {
-  const url = `${API_URL}?action=comprasCredito&token=${encodeURIComponent(token)}&month=${encodeURIComponent(month)}&_ts=${Date.now()}`;
-  return getJSON(url);
+    const url = `${API_URL}?action=comprasCredito&token=${encodeURIComponent(token)}&month=${encodeURIComponent(month)}&_ts=${Date.now()}`;
+    return getJSON(url);
   },
 
   async addMovimentacao(token, payload) {
@@ -92,8 +97,8 @@ export const api = {
   },
 
   async getConfigAssinaturas(token) {
-  const url = `${API_URL}?action=configAssinaturas&token=${encodeURIComponent(token)}&_ts=${Date.now()}`;
-  return getJSON(url);
+    const url = `${API_URL}?action=configAssinaturas&token=${encodeURIComponent(token)}&_ts=${Date.now()}`;
+    return getJSON(url);
   },
 
   async addAssinatura(token, payload) {
