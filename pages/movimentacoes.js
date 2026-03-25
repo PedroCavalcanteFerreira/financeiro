@@ -250,6 +250,73 @@ async function renderMovimentacoesByMonth(root, token, month) {
         </table>
       </div>
     </section>
+    <div id="confirm-modal" style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(15,23,42,0.45);
+    z-index:9999;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+  ">
+    <div style="
+      width:100%;
+      max-width:420px;
+      background:#fff;
+      border-radius:16px;
+      box-shadow:0 20px 50px rgba(0,0,0,0.18);
+      overflow:hidden;
+    ">
+      <div style="padding:18px 18px 8px 18px;">
+        <h3 style="margin:0; font-size:18px;">Confirmar exclusão</h3>
+      </div>
+
+      <div style="padding:0 18px 18px 18px;">
+        <p id="confirm-modal-message" class="muted" style="margin:0;">
+          Deseja excluir esta movimentação?
+        </p>
+      </div>
+
+      <div style="
+        display:flex;
+        justify-content:flex-end;
+        gap:10px;
+        padding:14px 18px 18px 18px;
+        border-top:1px solid #eef2f7;
+      ">
+        <button
+          id="confirm-modal-cancel"
+          type="button"
+          style="
+            background:#fff;
+            color:#1f2937;
+            border:1px solid #dbe1e7;
+            border-radius:10px;
+            padding:10px 14px;
+            cursor:pointer;
+          "
+        >
+          Cancelar
+        </button>
+
+        <button
+          id="confirm-modal-confirm"
+          type="button"
+          style="
+            background:#dc2626;
+            color:#fff;
+            border:none;
+            border-radius:10px;
+            padding:10px 14px;
+            cursor:pointer;
+          "
+        >
+          Excluir
+        </button>
+      </div>
+    </div>
+  </div>
   `;
 
   const flowEl = document.getElementById("tx-flow");
@@ -257,13 +324,16 @@ async function renderMovimentacoesByMonth(root, token, month) {
   const methodEl = document.getElementById("tx-method");
   const accountEl = document.getElementById("tx-account");
   const cardEl = document.getElementById("tx-card");
-
   const methodWrap = document.getElementById("tx-method-wrap");
   const accountWrap = document.getElementById("tx-account-wrap");
   const cardWrap = document.getElementById("tx-card-wrap");
   const installmentsWrap = document.getElementById("tx-installments-wrap");
   const partialWrap = document.getElementById("tx-card-bill-partial-wrap");
   const partialEl = document.getElementById("tx-card-bill-partial");
+  const confirmModal = document.getElementById("confirm-modal");
+  const confirmModalMessage = document.getElementById("confirm-modal-message");
+  const confirmModalCancel = document.getElementById("confirm-modal-cancel");
+  const confirmModalConfirm = document.getElementById("confirm-modal-confirm");
 
   function fillSelect(selectEl, items, valueKey, labelKey) {
     const previousValue = selectEl.value;
@@ -369,6 +439,47 @@ async function renderMovimentacoesByMonth(root, token, month) {
     accountWrap.style.display = "block";
   }
 
+  function openConfirmModal(message) {
+    return new Promise(resolve => {
+      confirmModalMessage.textContent = message || "Deseja continuar?";
+      confirmModal.style.display = "flex";
+
+      function close(result) {
+        confirmModal.style.display = "none";
+        confirmModalCancel.removeEventListener("click", onCancel);
+        confirmModalConfirm.removeEventListener("click", onConfirm);
+        confirmModal.removeEventListener("click", onBackdrop);
+        document.removeEventListener("keydown", onKeyDown);
+        resolve(result);
+      }
+
+      function onCancel() {
+        close(false);
+      }
+
+      function onConfirm() {
+        close(true);
+      }
+
+      function onBackdrop(e) {
+        if (e.target === confirmModal) {
+          close(false);
+        }
+      }
+
+      function onKeyDown(e) {
+        if (e.key === "Escape") {
+          close(false);
+        }
+      }
+
+      confirmModalCancel.addEventListener("click", onCancel);
+      confirmModalConfirm.addEventListener("click", onConfirm);
+      confirmModal.addEventListener("click", onBackdrop);
+      document.addEventListener("keydown", onKeyDown);
+    });
+  }
+
   refreshMethods();
   updateDynamicFields();
 
@@ -448,7 +559,8 @@ async function renderMovimentacoesByMonth(root, token, month) {
   root.querySelectorAll(".tx-delete-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
       const txId = btn.dataset.id;
-      const ok = confirm("Deseja excluir esta movimentação?");
+      const ok = await openConfirmModal("Deseja excluir esta movimentação?");
+
       if (!ok) return;
 
       const res = await api.deleteMovimentacao(token, txId);
@@ -458,7 +570,11 @@ async function renderMovimentacoesByMonth(root, token, month) {
       }
 
       window.showToast("Movimentação excluída com sucesso.", "success");
-      await renderMovimentacoesByMonth(root, token, document.getElementById("mov-month").value || getCurrentMonth());
+      await renderMovimentacoesByMonth(
+        root,
+        token,
+        document.getElementById("mov-month").value || getCurrentMonth()
+      );
     });
   });
 
