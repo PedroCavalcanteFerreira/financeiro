@@ -61,6 +61,11 @@ export const api = {
     return getJSON(url);
   },
 
+  async getMovimentacoesBundle(token, month) {
+    const url = `${API_URL}?action=movimentacoesBundle&token=${encodeURIComponent(token)}&month=${encodeURIComponent(month)}&_ts=${Date.now()}`;
+    return getJSON(url);
+  },
+
   async getConfigMovimentacoes(token) {
     const url = `${API_URL}?action=configMovimentacoes&token=${encodeURIComponent(token)}&_ts=${Date.now()}`;
     return getJSON(url);

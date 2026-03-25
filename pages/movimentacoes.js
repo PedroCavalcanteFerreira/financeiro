@@ -33,11 +33,21 @@ export async function renderMovimentacoes(root) {
 }
 
 async function renderMovimentacoesByMonth(root, token, month) {
-  const [movRes, cfgRes, creditoRes] = await Promise.all([
-    api.getMovimentacoes(token, month),
-    api.getConfigMovimentacoes(token),
-    api.getComprasCredito(token, month)
-  ]);
+  const bundleRes = await api.getMovimentacoesBundle(token, month);
+
+  if (!bundleRes.ok) {
+    root.innerHTML = `
+      <div class="card">
+        <h3>Movimentações</h3>
+        <p class="muted">Erro ao carregar: ${bundleRes.message || "erro desconhecido"}</p>
+      </div>
+    `;
+    return;
+  }
+
+  const movRes = { ok: true, data: bundleRes.data?.movimentacoes || {} };
+  const cfgRes = { ok: true, data: bundleRes.data?.config || {} };
+  const creditoRes = { ok: true, data: bundleRes.data?.comprasCredito || {} };
 
   if (!movRes.ok) {
     root.innerHTML = `
