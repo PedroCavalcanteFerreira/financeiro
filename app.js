@@ -5,6 +5,7 @@ import { renderCartoes } from "./pages/cartoes.js";
 import { renderContas } from "./pages/contas.js";
 import { renderAssinaturas } from "./pages/assinaturas.js";
 import { renderMovimentacoes } from "./pages/movimentacoes.js";
+import { renderInvestimentos } from "./pages/investimentos.js";
 
 const pageLogin = document.getElementById("page-login");
 const pageApp = document.getElementById("page-app");
@@ -61,6 +62,7 @@ function getRouteRenderer(route) {
   if (route === "contas") return renderContas;
   if (route === "assinaturas") return renderAssinaturas;
   if (route === "movimentacoes") return renderMovimentacoes;
+  if (route === "investimentos") return renderInvestimentos;
   return null;
 }
 

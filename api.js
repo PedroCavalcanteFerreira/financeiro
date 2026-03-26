@@ -123,5 +123,23 @@ export const api = {
       token,
       subscriptionId
     });
+  },
+
+  async getInvestimentosData(token) {
+    const url = `${API_URL}?action=investimentos&token=${encodeURIComponent(token)}&_ts=${Date.now()}`;
+    return getJSON(url);
+  },
+
+  async getConfigInvestimentos(token) {
+    const url = `${API_URL}?action=configInvestimentos&token=${encodeURIComponent(token)}&_ts=${Date.now()}`;
+    return getJSON(url);
+  },
+
+  async addInvestimento(token, payload) {
+    return postJSON({
+      action: "addInvestimento",
+      token,
+      payload
+    });
   }
 };
