@@ -12,6 +12,9 @@ const pageApp = document.getElementById("page-app");
 const viewRoot = document.getElementById("view-root");
 const userBadge = document.getElementById("user-badge");
 const btnLogout = document.getElementById("btn-logout");
+const btnMenu = document.getElementById("btn-menu");
+const appSidebar = document.getElementById("app-sidebar");
+const sidebarOverlay = document.getElementById("sidebar-overlay");
 
 let navigationBound = false;
 let currentRoute = null;
@@ -76,6 +79,10 @@ async function navigate(route, options = {}) {
     btn.classList.toggle("active", btn.dataset.route === route);
   });
 
+  if (isMobileLayout()) {
+    closeSidebar();
+  }
+
   if (!renderer) {
     viewRoot.innerHTML = `
       <div class="card">
@@ -106,6 +113,49 @@ async function navigate(route, options = {}) {
   } finally {
     isNavigating = false;
   }
+}
+
+function isMobileLayout() {
+  return window.innerWidth <= 980;
+}
+
+function openSidebar() {
+  if (!appSidebar || !sidebarOverlay) return;
+  appSidebar.classList.add("open");
+  sidebarOverlay.classList.add("show");
+  document.body.classList.add("menu-open");
+}
+
+function closeSidebar() {
+  if (!appSidebar || !sidebarOverlay) return;
+  appSidebar.classList.remove("open");
+  sidebarOverlay.classList.remove("show");
+  document.body.classList.remove("menu-open");
+}
+
+function toggleSidebar() {
+  if (!appSidebar) return;
+  if (appSidebar.classList.contains("open")) {
+    closeSidebar();
+  } else {
+    openSidebar();
+  }
+}
+
+function bindResponsiveShell() {
+  if (btnMenu) {
+    btnMenu.addEventListener("click", toggleSidebar);
+  }
+
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener("click", closeSidebar);
+  }
+
+  window.addEventListener("resize", () => {
+    if (!isMobileLayout()) {
+      closeSidebar();
+    }
+  });
 }
 
 function setupNavigation() {
@@ -237,6 +287,7 @@ bindLogin({
 });
 
 btnLogout.addEventListener("click", doLogout);
+bindResponsiveShell();
 
 const user = getStoredUser();
 if (user) {

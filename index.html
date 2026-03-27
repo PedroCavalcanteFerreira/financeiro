@@ -32,30 +32,39 @@
     </section>
 
     <section id="page-app" class="page">
-      <header class="topbar">
-        <div>
+  <header class="topbar">
+      <div class="topbar-left">
+        <button id="btn-menu" class="icon-btn" type="button" aria-label="Abrir menu">
+          ☰
+        </button>
+
+        <div class="topbar-brand">
           <h2>Finance Dashboard</h2>
           <span id="user-badge"></span>
         </div>
-        <button id="btn-logout" class="btn-secondary">Sair</button>
-      </header>
-
-      <div class="layout">
-        <aside class="sidebar">
-          <button class="nav-btn active" data-route="resumo">Resumo</button>
-          <button class="nav-btn" data-route="movimentacoes">Movimentações</button>
-          <button class="nav-btn" data-route="contas">Contas a pagar</button>
-          <button class="nav-btn" data-route="assinaturas">Assinaturas</button>
-          <button class="nav-btn" data-route="cartoes">Cartões</button>
-          <button class="nav-btn" data-route="investimentos">Investimentos</button>
-          <button class="nav-btn" data-route="config">Config</button>
-        </aside>
-
-        <main class="content">
-          <div id="view-root"></div>
-        </main>
       </div>
-    </section>
+
+      <button id="btn-logout" class="btn-secondary">Sair</button>
+    </header>
+
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="layout">
+      <aside id="app-sidebar" class="sidebar">
+        <button class="nav-btn active" data-route="resumo">Resumo</button>
+        <button class="nav-btn" data-route="movimentacoes">Movimentações</button>
+        <button class="nav-btn" data-route="contas">Contas a pagar</button>
+        <button class="nav-btn" data-route="assinaturas">Assinaturas</button>
+        <button class="nav-btn" data-route="cartoes">Cartões</button>
+        <button class="nav-btn" data-route="investimentos">Investimentos</button>
+        <button class="nav-btn" data-route="config">Config</button>
+      </aside>
+
+      <main class="content">
+        <div id="view-root"></div>
+      </main>
+    </div>
+  </section>
   </div>
 
   <script type="module" src="./app.js"></script>
