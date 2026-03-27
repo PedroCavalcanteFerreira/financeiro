@@ -141,5 +141,13 @@ export const api = {
       token,
       payload
     });
+  },
+
+    async deleteInvestimento(token, invId) {
+    return postJSON({
+      action: "deleteInvestimento",
+      token,
+      invId
+    });
   }
 };

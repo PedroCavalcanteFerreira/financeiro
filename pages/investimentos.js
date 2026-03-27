@@ -79,6 +79,10 @@ export async function renderInvestimentos(root) {
           <div class="kpi-label">Rendimentos</div>
           <div class="kpi-value">${brl(kpis.totalRendimentos)}</div>
         </div>
+        <div class="card">
+          <div class="kpi-label">Lucro realizado</div>
+          <div class="kpi-value">${brl(kpis.lucroRealizado)}</div>
+        </div>
       </div>
 
       <div class="card" style="margin-top:16px;">
@@ -187,7 +191,9 @@ export async function renderInvestimentos(root) {
               <th>Qtd</th>
               <th>PU</th>
               <th>Valor</th>
+              <th>Lucro realizado</th>
               <th>Obs.</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -201,7 +207,11 @@ export async function renderInvestimentos(root) {
                 <td>${Number(r.quantity || 0).toLocaleString("pt-BR")}</td>
                 <td>${brl(r.unit_price)}</td>
                 <td>${brl(r.amount)}</td>
+                <td>${String(r.tx_type).toUpperCase() === "SELL" ? brl(r.realized_pnl) : "-"}</td>
                 <td>${r.notes || "-"}</td>
+                <td>
+                  <button class="inv-delete-btn" data-id="${r.inv_id}">Excluir</button>
+                </td>
               </tr>
             `).join("")}
           </tbody>
@@ -273,5 +283,23 @@ export async function renderInvestimentos(root) {
 
     window.showToast("Movimentação de investimento salva com sucesso.", "success");
     await renderInvestimentos(root);
+  });
+
+  root.querySelectorAll(".inv-delete-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const invId = btn.dataset.id;
+      const ok = confirm("Deseja excluir esta movimentação de investimento?");
+      if (!ok) return;
+
+      const res = await api.deleteInvestimento(token, invId);
+
+      if (!res.ok) {
+        window.showToast(res.message || "Erro ao excluir movimentação.", "error");
+        return;
+      }
+
+      window.showToast("Movimentação de investimento excluída com sucesso.", "success");
+      await renderInvestimentos(root);
+    });
   });
 }
