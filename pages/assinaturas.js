@@ -7,6 +7,10 @@ function brl(value) {
   });
 }
 
+function billingCycleLabel(value) {
+  return String(value || "").toUpperCase() === "ANNUAL" ? "Anual" : "Mensal";
+}
+
 function todayDate() {
   const d = new Date();
   const y = d.getFullYear();
@@ -96,6 +100,16 @@ async function renderAssinaturasPage(root, token) {
               ${cards.map(c => `<option value="${c.card_id}">${c.name}</option>`).join("")}
             </select>
           </div>
+          <div>
+            <label class="muted">Periodicidade</label>
+            <select
+              id="sub-billing-cycle"
+              style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;"
+            >
+              <option value="MONTHLY">Mensal</option>
+              <option value="ANNUAL">Anual</option>
+            </select>
+          </div>
         </div>
 
         <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap:12px; margin-top:12px;">
@@ -132,6 +146,7 @@ async function renderAssinaturasPage(root, token) {
               <th>Status</th>
               <th>Início</th>
               <th>Fim</th>
+              <th>Periodicidade</th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -145,6 +160,7 @@ async function renderAssinaturasPage(root, token) {
                 <td>${item.status || "-"}</td>
                 <td>${item.startDate || "-"}</td>
                 <td>${item.endDate || "-"}</td>
+                <td>${item.billingCycleLabel || billingCycleLabel(item.billingCycle)}</td>
                 <td>
                   <button class="sub-toggle-btn" data-id="${item.subscriptionId}">
                     ${item.status === "Ativa" ? "Desativar" : "Ativar"}
@@ -166,6 +182,7 @@ async function renderAssinaturasPage(root, token) {
       name: document.getElementById("sub-name").value,
       amount: Number(document.getElementById("sub-amount").value || 0),
       billing_day: Number(document.getElementById("sub-billing-day").value || 1),
+      billing_cycle: document.getElementById("sub-billing-cycle").value,
       card_id: document.getElementById("sub-card").value,
       category_id: document.getElementById("sub-category").value,
       active: true,
