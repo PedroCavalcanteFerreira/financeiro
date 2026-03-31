@@ -182,7 +182,7 @@ async function renderMovimentacoesByMonth(root, token, month) {
           </div>
 
           <div id="tx-account-wrap">
-            <label class="muted">Conta</label>
+            <label class="muted">Conta / benefício</label>
             <select id="tx-account" style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid #dbe1e7;border-radius:10px;"></select>
           </div>
 
@@ -400,13 +400,39 @@ async function renderMovimentacoesByMonth(root, token, month) {
     fillSelect(methodEl, methods, "payment_method_id", "name");
   }
 
+  function getSelectedCategoryObj() {
+    return categories.find(function(c) {
+      return String(c.category_id || "") === String(categoryEl.value || "");
+    }) || null;
+  }
+
   function refreshAccounts(flow) {
+    const method = methodEl.value;
+    const category = getSelectedCategoryObj();
+    const scope = String(category?.wallet_scope || "ALL").toUpperCase();
+
     let filtered = accounts;
 
     if (flow === "RECEITA") {
-      filtered = accounts.filter(a => a.kind === "CONTA" || a.kind === "BENEFICIO");
+      filtered = accounts.filter(function(a) {
+        const kind = String(a.kind || "").toUpperCase();
+        return kind === "CONTA" || kind === "BENEFICIO";
+      });
     } else {
-      filtered = accounts.filter(a => a.kind === "CONTA");
+      if (method === "pm_ben" || scope === "BENEFICIO") {
+        filtered = accounts.filter(function(a) {
+          return String(a.kind || "").toUpperCase() === "BENEFICIO";
+        });
+      } else if (scope === "CONTA") {
+        filtered = accounts.filter(function(a) {
+          return String(a.kind || "").toUpperCase() === "CONTA";
+        });
+      } else {
+        filtered = accounts.filter(function(a) {
+          const kind = String(a.kind || "").toUpperCase();
+          return kind === "CONTA" || kind === "BENEFICIO";
+        });
+      }
     }
 
     fillSelect(accountEl, filtered, "account_id", "name");
@@ -552,11 +578,16 @@ async function renderMovimentacoesByMonth(root, token, month) {
       is_partial: isCardBill ? Boolean(partialEl.checked) : false
     };
 
+    const selectedAccount = accounts.find(function(a) {
+      return String(a.account_id || "") === String(payload.account_id || "");
+    });
+
     if (flow === "RECEITA") {
-      const selectedAccount = accounts.find(a => a.account_id === payload.account_id);
       payload.wallet = selectedAccount?.kind || "CONTA";
-    } else {
+    } else if (method === "pm_cc") {
       payload.wallet = "CONTA";
+    } else {
+      payload.wallet = selectedAccount?.kind || "CONTA";
     }
 
     const res = await api.addMovimentacao(token, payload);

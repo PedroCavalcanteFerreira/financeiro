@@ -36,22 +36,25 @@ export async function renderResumo(root) {
     throw new Error("Campo data não veio na resposta.");
   }
 
+  const despesasContaMes = Number(data.receitaDespesaConta?.despesas?.[0] || 0);
+  const despesasBeneficiosMes = Number(data.receitaDespesaBeneficios?.despesas?.[0] || 0);
+
   root.innerHTML = `
     <section>
       <div class="grid grid-kpi">
-        <div class="card">
-          <div class="kpi-label">Sobrou do mês anterior</div>
-          <div class="kpi-value">${brl(data.kpis?.carryover)}</div>
-        </div>
-
         <div class="card">
           <div class="kpi-label">Saldo atual - Conta</div>
           <div class="kpi-value">${brl(data.kpis?.saldoConta)}</div>
         </div>
 
         <div class="card">
-          <div class="kpi-label">Saldo atual - Benefícios</div>
-          <div class="kpi-value">${brl(data.kpis?.saldoBeneficios)}</div>
+          <div class="kpi-label">Despesas do mês - Conta</div>
+          <div class="kpi-value">${brl(despesasContaMes)}</div>
+        </div>
+
+        <div class="card">
+          <div class="kpi-label">Resultado do mês - Conta</div>
+          <div class="kpi-value">${brl(data.kpis?.resultadoConta)}</div>
         </div>
 
         <div class="card">
@@ -62,8 +65,13 @@ export async function renderResumo(root) {
 
       <div class="grid grid-kpi" style="margin-top:16px;">
         <div class="card">
-          <div class="kpi-label">Resultado do mês - Conta</div>
-          <div class="kpi-value">${brl(data.kpis?.resultadoConta)}</div>
+          <div class="kpi-label">Saldo atual - Benefícios</div>
+          <div class="kpi-value">${brl(data.kpis?.saldoBeneficios)}</div>
+        </div>
+
+        <div class="card">
+          <div class="kpi-label">Despesas do mês - Benefícios</div>
+          <div class="kpi-value">${brl(despesasBeneficiosMes)}</div>
         </div>
 
         <div class="card">
@@ -74,11 +82,6 @@ export async function renderResumo(root) {
         <div class="card">
           <div class="kpi-label">A pagar (30 dias)</div>
           <div class="kpi-value">${brl(data.kpis?.aPagar30d)}</div>
-        </div>
-
-        <div class="card">
-          <div class="kpi-label">Observação</div>
-          <div class="muted">Resumo geral do mês, separado entre caixa e crédito.</div>
         </div>
       </div>
 
